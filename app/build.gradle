@@ -1,5 +1,8 @@
+import static org.gradle.api.file.DuplicatesStrategy.EXCLUDE
+
 plugins {
     id 'java'
+    id 'application'
     id 'io.freefair.lombok'
     id 'com.gorylenko.gradle-git-properties'
     id 'com.adarshr.test-logger'
@@ -14,43 +17,59 @@ java {
 }
 
 repositories {
-   mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
-    implementation 'org.apache.kafka:kafka-clients:3.0.0'
-    implementation 'org.slf4j:slf4j-api:1.7.32'
-    implementation 'org.slf4j:slf4j-simple:1.7.32'
+    // Kafka
+    implementation 'org.apache.kafka:connect-api:3.1.0'
+
+    // Logging
+    implementation 'ch.qos.logback:logback-classic:1.2.11'
+
+    // Test
+    testImplementation 'org.assertj:assertj-core:3.22.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
-application {
-    mainClass = 'com.zinkworks.connectors.demo.App'
-}
+mainClassName = 'com.zinkworks.connectors.demo.App'
 
 testlogger {
-	theme 'mocha'
-	showExceptions true
-	showStackTraces true
-	showFullStackTraces false
-	showCauses true
-	slowThreshold 2000
-	showSummary true
-	showSimpleNames false
-	showPassed true
-	showSkipped true
-	showFailed true
-	showStandardStreams false
-	showPassedStandardStreams true
-	showSkippedStandardStreams true
-	showFailedStandardStreams true
-	logLevel 'lifecycle'
+    theme 'mocha'
+    showExceptions true
+    showStackTraces true
+    showFullStackTraces false
+    showCauses true
+    slowThreshold 2000
+    showSummary true
+    showSimpleNames false
+    showPassed true
+    showSkipped true
+    showFailed true
+    showStandardStreams false
+    showPassedStandardStreams true
+    showSkippedStandardStreams true
+    showFailedStandardStreams true
+    logLevel 'lifecycle'
 }
 
 test {
     useJUnitPlatform()
 }
+
+jar {
+    manifest {
+        attributes 'Main-Class': "$mainClassName"
+    }
+    duplicatesStrategy EXCLUDE
+    from {
+        configurations.runtimeClasspath
+                .findAll { it.name.endsWith('jar') }
+                .collect { zipTree(it) }
+    }
+}
+
 
 task wrapper(type: Wrapper) {
     gradleVersion = '7.4.2'

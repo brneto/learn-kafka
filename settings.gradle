@@ -5,7 +5,7 @@ pluginManagement {
         id 'com.adarshr.test-logger' version testLoggerVersion
     }
 }
-startParameter.excludedTaskNames = ['init', 'wrapper']
+startParameter.excludedTaskNames = ['wrapper']
 
 rootProject.name = 'learn-kafka'
 include('app')
