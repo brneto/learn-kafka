@@ -1,0 +1,11 @@
+pluginManagement {
+    plugins {
+        id 'io.freefair.lombok' version lombokVersion
+        id 'com.gorylenko.gradle-git-properties' version gitPropertiesVersion
+        id 'com.adarshr.test-logger' version testLoggerVersion
+    }
+}
+startParameter.excludedTaskNames = ['init', 'wrapper']
+
+rootProject.name = 'learn-kafka'
+include('app')

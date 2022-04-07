@@ -1,0 +1,57 @@
+plugins {
+    id 'java'
+    id 'io.freefair.lombok'
+    id 'com.gorylenko.gradle-git-properties'
+    id 'com.adarshr.test-logger'
+}
+
+group 'com.zinkworks.connectors'
+version '0.0.1-SNAPSHOT'
+description 'Kafka connector demo application'
+
+java {
+    sourceCompatibility = '17'
+}
+
+repositories {
+   mavenCentral()
+}
+
+dependencies {
+    implementation 'org.apache.kafka:kafka-clients:3.0.0'
+    implementation 'org.slf4j:slf4j-api:1.7.32'
+    implementation 'org.slf4j:slf4j-simple:1.7.32'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+application {
+    mainClass = 'com.zinkworks.connectors.demo.App'
+}
+
+testlogger {
+	theme 'mocha'
+	showExceptions true
+	showStackTraces true
+	showFullStackTraces false
+	showCauses true
+	slowThreshold 2000
+	showSummary true
+	showSimpleNames false
+	showPassed true
+	showSkipped true
+	showFailed true
+	showStandardStreams false
+	showPassedStandardStreams true
+	showSkippedStandardStreams true
+	showFailedStandardStreams true
+	logLevel 'lifecycle'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '7.4.2'
+}
