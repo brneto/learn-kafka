@@ -13,7 +13,7 @@ version '0.0.1-SNAPSHOT'
 description 'Kafka connector demo application'
 
 java {
-    sourceCompatibility = '17'
+    sourceCompatibility '11'
 }
 
 repositories {
@@ -66,7 +66,7 @@ jar {
     duplicatesStrategy EXCLUDE
     from {
         configurations.runtimeClasspath
-                .findAll { it.name.endsWith('jar') }
+                .findAll { it.name.endsWith('jar') && !it.name.startsWith('slf4j-api') }
                 .collect { zipTree it }
     }
 }
@@ -92,13 +92,6 @@ task deploy {
             args 'cp', "$archivePath/$archiveName", "$targetPath/libs"
         }
     }
-//    println "baseName: $archivesBaseName"
-//    println "archiveBaseName: ${jar.archiveBaseName.get()}"
-//    println "archiveVersion: ${jar.archiveVersion.get()}"
-//    println "archiveExtension: ${jar.archiveExtension.get()}"
-//    println "filename: ${jar.archiveFileName.get()}"
-//    println "path: ${jar.destinationDirectory.get()}"
-//    println "projectPath: $archivePath"
-//    println "$archivePath / $archiveName"
-//    println "$resourcePath"
+
+// connect-standalone.sh $KAFKA_HOME/config/connect-standalone.properties $KAFKA_HOME/config/connect-file-event-source.properties
 }

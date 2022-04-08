@@ -8,7 +8,6 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.nio.channels.Selector;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -58,19 +57,19 @@ public class FileEventSourceTask extends SourceTask {
 
     try {
       watcher = FileSystems.getDefault().newWatchService();
-      Path.of(URI.create(watchDir)).register(watcher, valueOf(watchEvent));
+      Path.of(watchDir).register(watcher, valueOf(watchEvent));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
   }
 
   private WatchEvent.Kind<Path> valueOf(String eventKind) throws IOException {
-    return switch (eventKind) {
-      case "create" -> ENTRY_CREATE;
-      case "modify" -> ENTRY_MODIFY;
-      case "delete" -> ENTRY_DELETE;
-      default -> throw new IOException(format("Unknown event kind [%s]", eventKind));
-    };
+    switch (eventKind) {
+      case "create": return ENTRY_CREATE;
+      case "modify": return ENTRY_MODIFY;
+      case "delete": return ENTRY_DELETE;
+      default: throw new IOException(format("Unknown event kind [%s]", eventKind));
+    }
   }
 
   /**
