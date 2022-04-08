@@ -71,18 +71,25 @@ jar {
     }
 }
 
-task deploy(type:Exec) {
+task deploy {
     dependsOn build
-    Directory archivePath = jar.destinationDirectory.get()
-    String archiveName = jar.archiveFileName.get()
+    doLast {
+        String targetPath = 'kafka1:/opt/bitnami/kafka'
+        exec {
+            String resourcePath = sourceSets.main.output.resourcesDir
+            String resourceName = 'connect-file-event-source.properties'
 
-    String resourcePath = sourceSets.main.output.resourcesDir
-    String resourceName = 'connect-file-event-source.properties'
+            description "docker cp $resourcePath/$resourceName $targetPath/config"
+            commandLine 'docker', 'cp', "$resourcePath/$resourceName", "$targetPath/config"
+        }
+        exec {
+            Directory archivePath = jar.destinationDirectory.get()
+            String archiveName = jar.archiveFileName.get()
 
-    String targetPath = 'kafka1:/opt/bitnami/kafka'
-
-    commandLine 'docker', 'cp', "$archivePath/$archiveName", "$targetPath/libs"
-    commandLine 'docker', 'cp', "$resourcePath/$resourceName", "$targetPath/config"
+            description "docker cp $archivePath/$archiveName $targetPath/libs"
+            commandLine 'docker', 'cp', "$archivePath/$archiveName", "$targetPath/libs"
+        }
+    }
 
 //    println "baseName: $archivesBaseName"
 //    println "archiveBaseName: ${jar.archiveBaseName.get()}"
