@@ -70,7 +70,15 @@ jar {
     }
 }
 
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '7.4.2'
+task deploy {//(type:Exec) {
+    dependsOn build
+    // 1. Copy connector jar file into /opt/bitnami/kafka/libs
+    //commandLine 'docker', 'cp', 'app/build/libs/app-0.0.1-SNAPSHOT.jar', 'kafka1:/opt/bitnami/kafka/libs/'
+    // 2. Copy connector prop file into /opt/bitnami/kafka/config
+    //commandLine 'docker', 'cp', 'src/resources/connect-file-event-source.properties', 'kafka1:/opt/bitnami/kafka/config'
+    //println "name: $"
+    println "baseName: $archivesBaseName"
+    println "archiveBaseName: ${jar.archiveBaseName.get()}"
+    println "archiveVersion: ${jar.archiveVersion.get()}"
+    println "archiveExtension: ${jar.archiveExtension.get()}"
 }
