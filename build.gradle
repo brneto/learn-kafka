@@ -59,6 +59,7 @@ test {
 }
 
 jar {
+    archiveBaseName = 'connect-file-event-source'
     manifest {
         attributes 'Main-Class': "$mainClassName"
     }
@@ -70,15 +71,26 @@ jar {
     }
 }
 
-task deploy {//(type:Exec) {
+task deploy(type:Exec) {
     dependsOn build
-    // 1. Copy connector jar file into /opt/bitnami/kafka/libs
-    //commandLine 'docker', 'cp', 'app/build/libs/app-0.0.1-SNAPSHOT.jar', 'kafka1:/opt/bitnami/kafka/libs/'
-    // 2. Copy connector prop file into /opt/bitnami/kafka/config
-    //commandLine 'docker', 'cp', 'src/resources/connect-file-event-source.properties', 'kafka1:/opt/bitnami/kafka/config'
-    //println "name: $"
-    println "baseName: $archivesBaseName"
-    println "archiveBaseName: ${jar.archiveBaseName.get()}"
-    println "archiveVersion: ${jar.archiveVersion.get()}"
-    println "archiveExtension: ${jar.archiveExtension.get()}"
+    Directory archivePath = jar.destinationDirectory.get()
+    String archiveName = jar.archiveFileName.get()
+
+    String resourcePath = sourceSets.main.output.resourcesDir
+    String resourceName = 'connect-file-event-source.properties'
+
+    String targetPath = 'kafka1:/opt/bitnami/kafka'
+
+    commandLine 'docker', 'cp', "$archivePath/$archiveName", "$targetPath/libs"
+    commandLine 'docker', 'cp', "$resourcePath/$resourceName", "$targetPath/config"
+
+//    println "baseName: $archivesBaseName"
+//    println "archiveBaseName: ${jar.archiveBaseName.get()}"
+//    println "archiveVersion: ${jar.archiveVersion.get()}"
+//    println "archiveExtension: ${jar.archiveExtension.get()}"
+//    println "filename: ${jar.archiveFileName.get()}"
+//    println "path: ${jar.destinationDirectory.get()}"
+//    println "projectPath: $archivePath"
+//    println "$archivePath / $archiveName"
+//    println "$resourcePath"
 }
