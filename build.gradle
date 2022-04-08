@@ -79,7 +79,7 @@ task deploy {
             String resourcePath = sourceSets.main.output.resourcesDir
             String resourceName = 'connect-file-event-source.properties'
 
-            description "docker cp $resourcePath/$resourceName $targetPath/config"
+            println "docker cp $resourcePath/$resourceName $targetPath/config"
             executable 'docker'
             args 'cp', "$resourcePath/$resourceName", "$targetPath/config"
         }
@@ -87,11 +87,15 @@ task deploy {
             Directory archivePath = jar.destinationDirectory.get()
             String archiveName = jar.archiveFileName.get()
 
-            description "docker cp $archivePath/$archiveName $targetPath/libs"
+            println "docker cp $archivePath/$archiveName $targetPath/libs"
             executable 'docker'
             args 'cp', "$archivePath/$archiveName", "$targetPath/libs"
         }
     }
+}
 
 // connect-standalone.sh $KAFKA_HOME/config/connect-standalone.properties $KAFKA_HOME/config/connect-file-event-source.properties
-}
+// kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic dir_event
+// kafka-topics.sh --bootstrap-server localhost:9092 --list
+// kafka-topics.sh --bootstrap-server localhost:9092 --topic dir_event --create --partitions 3
+// mkdir -p /opt/bitnami/test/toWatch
