@@ -28,8 +28,6 @@ import org.apache.kafka.connect.source.SourceTask;
 public class FileEventSourceTask extends SourceTask {
 
   private final FileEventSourceConnector sourceConnector = new FileEventSourceConnector();
-  private String dirToWatch;
-  private String watchEvent;
   private String topicName;
   private Map<String, String> sourcePartition;
   private WatchService watcher;
@@ -53,14 +51,14 @@ public class FileEventSourceTask extends SourceTask {
   @Override
   public void start(Map<String, String> props) {
     log.info("FileEventSourceTask -> start -> invoked [{}]", props);
-    dirToWatch = props.get(FileEventSourceConnector.DIR_TO_WATCH);
-    watchEvent = props.get(FileEventSourceConnector.EVENT_TO_WATCH);
-    topicName = props.get(FileEventSourceConnector.OUTPUT_TOPIC_NAME);
-    sourcePartition = Map.of("dirToWatch", dirToWatch);
+    final String watchDir = props.get(FileEventSourceConnector.WATCH_DIR);
+    final String watchEvent = props.get(FileEventSourceConnector.WATCH_EVENT);
+    topicName = props.get(FileEventSourceConnector.TOPIC_NAME);
+    sourcePartition = Map.of("watchDir", watchDir);
 
     try {
       watcher = FileSystems.getDefault().newWatchService();
-      Path.of(URI.create(dirToWatch)).register(watcher, valueOf(watchEvent));
+      Path.of(URI.create(watchDir)).register(watcher, valueOf(watchEvent));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

@@ -13,21 +13,21 @@ import org.apache.kafka.connect.source.SourceConnector;
 @Slf4j
 public class FileEventSourceConnector extends SourceConnector {
 
-  static final String DIR_TO_WATCH = "dir.to.watch";
-  static final String EVENT_TO_WATCH = "event.to.watch";
-  static final String OUTPUT_TOPIC_NAME = "output.topic.name";
+  static final String WATCH_DIR = "watch.dir";
+  static final String WATCH_EVENT = "watch.event";
+  static final String TOPIC_NAME = "topic";
   private static final ConfigDef CONFIG_DEF = new ConfigDef()
       .define(
-          DIR_TO_WATCH, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
+          WATCH_DIR, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
           "The directory to watch to an event")
       .define(
-          EVENT_TO_WATCH, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
+          WATCH_EVENT, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
           "A Event in disk to watch for")
       .define(
-          OUTPUT_TOPIC_NAME, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
+          TOPIC_NAME, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
           "The name of the topic to write to");
 
-  private String dirToWatch;
+  private String watchDir;
   private String watchEvent;
   private String topicName;
 
@@ -40,9 +40,9 @@ public class FileEventSourceConnector extends SourceConnector {
   @Override
   public void start(Map<String, String> props) {
     log.info("FileEventSourceConnector -> start -> invoked [{}]", props);
-    dirToWatch = props.get(DIR_TO_WATCH);
-    watchEvent = props.get(EVENT_TO_WATCH);
-    topicName = props.get(OUTPUT_TOPIC_NAME);
+    watchDir = props.get(WATCH_DIR);
+    watchEvent = props.get(WATCH_EVENT);
+    topicName = props.get(TOPIC_NAME);
   }
 
   /**
@@ -63,9 +63,9 @@ public class FileEventSourceConnector extends SourceConnector {
   @Override
   public List<Map<String, String>> taskConfigs(int maxTasks) {
     Map<String, String> config = Map.of(
-        EVENT_TO_WATCH, watchEvent,
-        DIR_TO_WATCH, dirToWatch,
-        OUTPUT_TOPIC_NAME, topicName);
+        WATCH_EVENT, watchEvent,
+        WATCH_DIR, watchDir,
+        TOPIC_NAME, topicName);
 
     return List.of(config);
   }
