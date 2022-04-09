@@ -3,6 +3,11 @@
  */
 package com.zinkworks.connectors.demo;
 
+import static com.zinkworks.connectors.demo.FileEventSourceConnector.TOPIC_NAME;
+import static com.zinkworks.connectors.demo.FileEventSourceConnector.WATCH_DIR;
+import static com.zinkworks.connectors.demo.FileEventSourceConnector.WATCH_EVENT;
+
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -11,8 +16,16 @@ public class App {
         return "Hello World!";
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         log.info("Running main...");
-        System.out.println(new App().getGreeting());
+        log.info(new App().getGreeting());
+        var t = new FileEventSourceTask();
+        t.start(Map.of(
+            WATCH_DIR, "./",
+            WATCH_EVENT, "create",
+            TOPIC_NAME, "whatever"));
+
+        for (int i = 0; i < 3; i++)
+            t.poll().forEach(s -> log.info(s.toString()));
     }
 }

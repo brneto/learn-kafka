@@ -33,8 +33,6 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
-mainClassName = 'com.zinkworks.connectors.demo.App'
-
 testlogger {
     theme 'mocha'
     showExceptions true
@@ -57,6 +55,8 @@ testlogger {
 test {
     useJUnitPlatform()
 }
+
+mainClassName = 'com.zinkworks.connectors.demo.App'
 
 jar {
     archiveBaseName = 'connect-file-event-source'

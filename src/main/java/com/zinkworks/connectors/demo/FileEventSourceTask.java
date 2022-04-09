@@ -1,5 +1,8 @@
 package com.zinkworks.connectors.demo;
 
+import static com.zinkworks.connectors.demo.FileEventSourceConnector.TOPIC_NAME;
+import static com.zinkworks.connectors.demo.FileEventSourceConnector.WATCH_DIR;
+import static com.zinkworks.connectors.demo.FileEventSourceConnector.WATCH_EVENT;
 import static java.lang.String.format;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -12,6 +15,7 @@ import java.nio.channels.Selector;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -27,6 +31,7 @@ import org.apache.kafka.connect.source.SourceTask;
 public class FileEventSourceTask extends SourceTask {
 
   private final FileEventSourceConnector sourceConnector = new FileEventSourceConnector();
+  private String watchDir;
   private String topicName;
   private Map<String, String> sourcePartition;
   private WatchService watcher;
@@ -50,9 +55,9 @@ public class FileEventSourceTask extends SourceTask {
   @Override
   public void start(Map<String, String> props) {
     log.info("FileEventSourceTask -> start -> invoked [{}]", props);
-    final String watchDir = props.get(FileEventSourceConnector.WATCH_DIR);
-    final String watchEvent = props.get(FileEventSourceConnector.WATCH_EVENT);
-    topicName = props.get(FileEventSourceConnector.TOPIC_NAME);
+    final String watchEvent = props.get(WATCH_EVENT);
+    watchDir = props.get(WATCH_DIR);
+    topicName = props.get(TOPIC_NAME);
     sourcePartition = Map.of("watchDir", watchDir);
 
     try {
@@ -91,13 +96,12 @@ public class FileEventSourceTask extends SourceTask {
     final AtomicInteger idx = new AtomicInteger();
     final List<SourceRecord> result = new ArrayList<>();
 
-    watcher
-        .take()
+    final WatchKey watchKey = watcher.take();
+    watchKey
         .pollEvents()
         .forEach(event -> {
           WatchEvent.Kind<?> kind = event.kind();
           if (kind != OVERFLOW) {
-            //WatchEvent<Path> ev = (WatchEvent<Path>) event;
             Path path = (Path) event.context();
 
             Map<String, Integer> sourceOffset = Map.of("index", idx.incrementAndGet());
@@ -110,6 +114,12 @@ public class FileEventSourceTask extends SourceTask {
                     Schema.STRING_SCHEMA, value));
           }
         });
+
+    if (!watchKey.reset()) {
+      var e = new InterruptedException(format("Directory '%s' is inaccessible", watchDir));
+      log.error("The watch key is no longer valid", e);
+      throw e;
+    }
 
     log.info("FileEventSourceTask -> poll -> completed [result count = {}]", result.size());
     return result;
