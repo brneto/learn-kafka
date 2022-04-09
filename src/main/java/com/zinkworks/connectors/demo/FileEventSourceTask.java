@@ -8,6 +8,9 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
+import static java.util.stream.Collectors.toList;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -18,10 +21,10 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Optional;
+import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -70,10 +73,14 @@ public class FileEventSourceTask extends SourceTask {
 
   private WatchEvent.Kind<Path> valueOf(String eventKind) throws IOException {
     switch (eventKind) {
-      case "create": return ENTRY_CREATE;
-      case "modify": return ENTRY_MODIFY;
-      case "delete": return ENTRY_DELETE;
-      default: throw new IOException(format("Unknown event kind [%s]", eventKind));
+      case "create":
+        return ENTRY_CREATE;
+      case "modify":
+        return ENTRY_MODIFY;
+      case "delete":
+        return ENTRY_DELETE;
+      default:
+        throw new IOException(format("Unknown event kind [%s]", eventKind));
     }
   }
 
@@ -93,36 +100,55 @@ public class FileEventSourceTask extends SourceTask {
   @Override
   public List<SourceRecord> poll() throws InterruptedException {
     log.info("FileEventSourceTask -> poll -> invoked");
-    final AtomicInteger idx = new AtomicInteger();
-    final List<SourceRecord> result = new ArrayList<>();
-
     final WatchKey watchKey = watcher.take();
-    watchKey
-        .pollEvents()
-        .forEach(event -> {
-          WatchEvent.Kind<?> kind = event.kind();
-          if (kind != OVERFLOW) {
-            Path path = (Path) event.context();
 
-            Map<String, Integer> sourceOffset = Map.of("index", idx.incrementAndGet());
-            String key = Instant.now().toString();
-            String value = kind.name() + ":" + path.toFile().getName();
-            result.add(
-                new SourceRecord(
-                    sourcePartition, sourceOffset, topicName,
-                    Schema.STRING_SCHEMA, key,
-                    Schema.STRING_SCHEMA, value));
-          }
-        });
+    final List<SourceRecord> result = buildSourceRecordList(watchKey.pollEvents());
+    resetWatchKey(watchKey);
 
-    if (!watchKey.reset()) {
+    log.info("FileEventSourceTask -> poll -> completed [result count = {}]", result.size());
+    return result;
+  }
+
+  private List<SourceRecord> buildSourceRecordList(List<WatchEvent<?>> eventList) {
+    final WatchEvent<?>[] events = eventList.toArray(WatchEvent[]::new);
+    return IntStream
+        .range(0, events.length)
+        .mapToObj(i -> buildSourceRecord(i, events[i]))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(toList());
+  }
+
+  private Optional<SourceRecord> buildSourceRecord(int idx, WatchEvent<?> event) {
+    final WatchEvent.Kind<?> kind = event.kind();
+
+    if (kind == OVERFLOW) {
+      return empty();
+    }
+
+    final Path path = (Path) event.context();
+    final Map<String, Integer> sourceOffset = Map.of("index", idx);
+    final String key = Instant.now().toString();
+    final String value = kind.name() + ":" + path.toFile().getName();
+
+    return of(new SourceRecord(
+        sourcePartition, sourceOffset, topicName,
+        Schema.STRING_SCHEMA, key,
+        Schema.STRING_SCHEMA, value));
+
+  }
+
+  /**
+   * Reset a {@link WatchKey}. Necessary to receive further watch events.
+   * @param key
+   * @throws InterruptedException
+   */
+  private void resetWatchKey(WatchKey key) throws InterruptedException {
+    if (!key.reset()) {
       var e = new InterruptedException(format("Directory '%s' is inaccessible", watchDir));
       log.error("The watch key is no longer valid", e);
       throw e;
     }
-
-    log.info("FileEventSourceTask -> poll -> completed [result count = {}]", result.size());
-    return result;
   }
 
   /**
