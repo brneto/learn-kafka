@@ -140,8 +140,8 @@ public class FileEventSourceTask extends SourceTask {
 
   /**
    * Reset a {@link WatchKey}. Necessary to receive further watch events.
-   * @param key
-   * @throws InterruptedException
+   * @param key the {@link WatchKey} object to be reset
+   * @throws InterruptedException thrown in case the reset of the key fails
    */
   private void resetWatchKey(WatchKey key) throws InterruptedException {
     if (!key.reset()) {
