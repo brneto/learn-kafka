@@ -4,12 +4,12 @@ import static org.assertj.core.api.BDDAssertions.then;
 
 import org.junit.jupiter.api.Test;
 
-class AppTest {
+class ConnectorRunnerTest {
 
   @Test
   void shouldHaveAGreeting() {
     // given
-    final App classUnderTest = new App();
+    final ConnectorRunner classUnderTest = new ConnectorRunner();
 
     // when
     final String result = classUnderTest.getGreeting();

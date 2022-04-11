@@ -56,7 +56,7 @@ test {
     useJUnitPlatform()
 }
 
-mainClassName = 'com.zinkworks.connectors.demo.App'
+mainClassName = 'com.zinkworks.connectors.demo.ConnectorRunner'
 
 jar {
     archiveBaseName = 'connect-file-event-source'

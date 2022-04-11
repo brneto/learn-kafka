@@ -11,14 +11,14 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class App {
+public class ConnectorRunner {
     public String getGreeting() {
         return "Hello World!";
     }
 
     public static void main(String[] args) throws InterruptedException {
         log.info("Running main...");
-        log.info(new App().getGreeting());
+        log.info(new ConnectorRunner().getGreeting());
         var t = new FileEventSourceTask();
         t.start(Map.of(
             WATCH_DIR, "./",
