@@ -100,12 +100,15 @@ public class FileEventSourceTask extends SourceTask {
   @Override
   public List<SourceRecord> poll() throws InterruptedException {
     log.info("FileEventSourceTask -> poll -> invoked");
+    List<SourceRecord> result = null;
+
     final WatchKey watchKey = watcher.take();
+    if (watchKey != null) {
+      result = buildSourceRecordList(watchKey.pollEvents());
+      resetWatchKey(watchKey);
+      log.info("FileEventSourceTask -> poll -> completed [result count = {}]", result.size());
+    }
 
-    final List<SourceRecord> result = buildSourceRecordList(watchKey.pollEvents());
-    resetWatchKey(watchKey);
-
-    log.info("FileEventSourceTask -> poll -> completed [result count = {}]", result.size());
     return result;
   }
 
