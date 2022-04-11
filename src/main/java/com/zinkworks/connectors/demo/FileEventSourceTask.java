@@ -102,7 +102,7 @@ public class FileEventSourceTask extends SourceTask {
     log.info("FileEventSourceTask -> poll -> invoked");
     List<SourceRecord> result = null;
 
-    final WatchKey watchKey = watcher.take();
+    final WatchKey watchKey = watcher.poll();
     if (watchKey != null) {
       result = buildSourceRecordList(watchKey.pollEvents());
       resetWatchKey(watchKey);
