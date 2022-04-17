@@ -74,7 +74,7 @@ jar {
     manifest {
         attributes(
             'Main-Class': "$mainClassName",
-            'Build-Revisiont': "${-> gitProps['git.commit.id.abbrev']}"
+            'Build-Revision': "${-> gitProps['git.commit.id.abbrev']}"
         )
     }
 }
