@@ -56,18 +56,26 @@ test {
     useJUnitPlatform()
 }
 
+gitProperties {
+    extProperty = 'gitProps'
+}
+generateGitProperties.outputs.upToDateWhen { false }
+
 mainClassName = 'com.zinkworks.connectors.demo.ConnectorRunner'
 
 jar {
     archiveBaseName = 'connect-file-event-source'
-    manifest {
-        attributes 'Main-Class': "$mainClassName"
-    }
     duplicatesStrategy EXCLUDE
     from {
         configurations.runtimeClasspath
                 .findAll { it.name.endsWith('jar') && !it.name.startsWith('slf4j-api') }
                 .collect { zipTree it }
+    }
+    manifest {
+        attributes(
+            'Main-Class': "$mainClassName",
+            'Build-Revisiont': "${-> gitProps['git.commit.id.abbrev']}"
+        )
     }
 }
 
