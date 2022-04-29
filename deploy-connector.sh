@@ -30,8 +30,8 @@ readPomTag () {
     fi
 
     # Extract the value of the tag trimmed
-    if [[ $line =~ \<$1\> ]] && ((depth == 1)); then
-      sed -n "s/<$1>\(.*\)<\/$1>/\1/p" <<< "$line" | xargs echo
+    if [[ $line =~ \<$2\> ]] && ((depth == 1)); then
+      sed -n "s/<$2>\(.*\)<\/$2>/\1/p" <<< "$line" | xargs echo
       return
     fi
 
@@ -45,7 +45,7 @@ readPomTag () {
     fi
     #echo "[$depth] $line"
 
-  done < "$2"
+  done < "$1"
 }
 
 stop_service () {
@@ -93,8 +93,8 @@ system_service='confluent-kafka-connect'
 # Preconditions
 set -e
 check_file $pom
-artifactId=$(readPomTag 'artifactId' $pom)
-version=$(readPomTag 'version' $pom)
+artifactId=$(readPomTag $pom 'artifactId')
+version=$(readPomTag $pom 'version')
 
 ## Actions
 set -x
