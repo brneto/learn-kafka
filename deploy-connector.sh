@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+set -eu
+
 example () {
   echo -e "Example:"
   echo -e "\t$0\n"
@@ -77,12 +79,12 @@ check_file () {
 }
 
 # Show help
-if [[ $1 == "-h" || $1 == "--help" ]]; then
-  usage; exit
-fi
-
 if [[ $# -gt 0 ]]; then
-  error "$0 does not support any argument"
+  if [[ $1 == "-h" || $1 == "--help" ]]; then
+    usage; exit
+  else
+    error "$0 does not support any argument"
+  fi
 fi
 
 ## Execute script
@@ -91,7 +93,6 @@ connectors_dir='/usr/share/java'
 system_service='confluent-kafka-connect'
 
 # Preconditions
-set -e
 check_file $pom
 artifactId=$(readPomTag $pom 'artifactId')
 version=$(readPomTag $pom 'version')
