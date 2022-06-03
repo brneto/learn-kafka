@@ -101,6 +101,10 @@ dockerCompose {
     dockerComposeFile 'docker-compose.yml'
 }
 
+//jibDockerBuild.dependsOn assemble
+build.dependsOn generateAvroJava
+dockerComposeUp.dependsOn jibDockerBuild
+
 task loadTopic(type: JavaExec) {
     main = "${project.group}.TopicLoader"
     classpath = sourceSets.main.runtimeClasspath
@@ -112,6 +116,3 @@ task readTopic(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     dependsOn loadTopic
 }
-
-//jibDockerBuild.dependsOn assemble
-dockerComposeUp.dependsOn jibDockerBuild
