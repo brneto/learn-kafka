@@ -1,0 +1,117 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'io.freefair.lombok'
+    id 'com.gorylenko.gradle-git-properties'
+    id 'com.adarshr.test-logger'
+    id 'com.google.cloud.tools.jib'
+    id 'com.palantir.docker-compose'
+    id 'com.github.davidmc24.gradle.plugin.avro'
+    id 'com.github.johnrengelman.shadow'
+}
+
+group 'com.zinkworks.streams'
+version '0.0.1-SNAPSHOT'
+description 'Kafka streams with co-partitioning demo application'
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(8) }
+}
+
+application {
+    mainClass = 'com.zinkworks.streams.demo.StreamRunner'
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://packages.confluent.io/maven/' }
+}
+
+dependencies {
+    // Props
+    implementation 'com.typesafe:config:1.4.2'
+
+    // Kafka
+    implementation 'org.apache.kafka:kafka-clients:2.8.0!!'
+    implementation('org.apache.kafka:kafka-streams:2.8.0') {
+        exclude group: 'org.apache.kafka', module: 'kafka-clients'
+    }
+
+    // Avro
+    implementation 'org.apache.avro:avro:1.11.0'
+    implementation('io.confluent:kafka-streams-avro-serde:6.1.1') {
+        exclude group: 'org.apache.kafka', module: 'kafka-clients'
+        exclude group: 'org.apache.kafka', module: 'kafka-streams'
+    }
+
+    // Logging
+    implementation 'ch.qos.logback:logback-classic:1.2.11'
+
+    // Test
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+    testImplementation 'org.assertj:assertj-core:3.22.0'
+    testImplementation 'org.apache.kafka:kafka-streams-test-utils:2.8.0'
+}
+
+testlogger {
+    theme 'mocha'
+    showExceptions true
+    showStackTraces true
+    showFullStackTraces false
+    showCauses true
+    slowThreshold 2000
+    showSummary true
+    showSimpleNames false
+    showPassed true
+    showSkipped true
+    showFailed true
+    showStandardStreams false
+    showPassedStandardStreams true
+    showSkippedStandardStreams true
+    showFailedStandardStreams true
+    logLevel 'lifecycle'
+}
+
+gitProperties { extProperty = 'gitProps' }
+generateGitProperties.outputs.upToDateWhen { false }
+jar {
+    manifest {
+        attributes(
+                'Main-Class': "$application.mainClass",
+                'Built-By': System.properties['user.name'],
+                'Build-Timestamp': Instant.now(),
+                'Build-Revision': "${-> gitProps['git.commit.id']}",
+                'Created-By': "Gradle ${gradle.gradleVersion}",
+                'Build-Jdk': "${System.properties['java.version']} (${System.properties['java.vendor']} ${System.properties['java.vm.version']})",
+                'Build-OS': "${System.properties['os.name']} ${System.properties['os.arch']} ${System.properties['os.version']}")
+    }
+}
+
+test { useJUnitPlatform() }
+
+jib {
+    to.image "${project.name}-process_api:${project.version}"
+    container {
+        jvmFlags = ['-Duser.timezone=Europe/Dublin']
+        mainClass "${project.group}.ProcessorApi"
+    }
+}
+
+dockerCompose {
+    dockerComposeFile 'docker-compose.yml'
+}
+
+task loadTopic(type: JavaExec) {
+    main = "${project.group}.TopicLoader"
+    classpath = sourceSets.main.runtimeClasspath
+    dependsOn dockerComposeUp
+}
+
+task readTopic(type: JavaExec) {
+    main = "${project.group}.TopicReader"
+    classpath = sourceSets.main.runtimeClasspath
+    dependsOn loadTopic
+}
+
+//jibDockerBuild.dependsOn assemble
+dockerComposeUp.dependsOn jibDockerBuild

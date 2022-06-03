@@ -1,0 +1,14 @@
+pluginManagement {
+    plugins {
+        id 'io.freefair.lombok' version lombokVersion
+        id 'com.gorylenko.gradle-git-properties' version gitPropertiesVersion
+        id 'com.adarshr.test-logger' version testLoggerVersion
+        id 'com.google.cloud.tools.jib' version jibVersion
+        id 'com.palantir.docker-compose' version dockerComposeVersion
+        id 'com.github.davidmc24.gradle.plugin.avro' version avroVersion
+        id 'com.github.johnrengelman.shadow' version shadowVersion
+    }
+}
+startParameter.excludedTaskNames = ['wrapper']
+
+rootProject.name = 'kafka-streams'
