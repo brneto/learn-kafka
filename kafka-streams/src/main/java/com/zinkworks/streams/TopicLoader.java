@@ -74,17 +74,6 @@ public class TopicLoader {
         }
     }
 
-    private static Callback callback() {
-        return (metadata, exception) -> {
-            if(exception != null) {
-                System.out.printf("Producing records encountered error %s %n", exception);
-            } else {
-                System.out.printf("Record produced - offset - %d timestamp - %d %n", metadata.offset(), metadata.timestamp());
-            }
-
-        };
-    }
-
     private List<ElectronicOrder> getOrders(Instant instant) {
         ElectronicOrder electronicOrder1 = ElectronicOrder.newBuilder()
                 .setElectronicId("PROJ-233")
@@ -161,6 +150,14 @@ public class TopicLoader {
         }};
     }
 
+    private static final Callback callback = (metadata, exception) -> {
+        if(exception != null) {
+            System.out.printf("Producing records encountered error %s %n", exception);
+        } else {
+            System.out.printf("Record produced - offset - %d timestamp - %d %n", metadata.offset(), metadata.timestamp());
+        }
+    };
+
     public void loadTopic() {
         Properties producerProps = config.getKafkaProps();
         producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -175,7 +172,7 @@ public class TopicLoader {
                         electronicOrder);
 
                 System.out.println("Sending record ->" + producerRecord);
-                producer.send(producerRecord, callback());
+                producer.send(producerRecord, callback);
             }));
         }
     }
