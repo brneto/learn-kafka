@@ -90,7 +90,7 @@ jar {
 test { useJUnitPlatform() }
 
 jib {
-    to.image "${project.name}-process_api:${project.version}"
+    to.image "${project.name}-processor_api:${project.version}"
     container {
         jvmFlags = ['-Duser.timezone=Europe/Dublin']
         mainClass "${project.group}.ProcessorApi"

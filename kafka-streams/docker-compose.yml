@@ -48,10 +48,10 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
       SCHEMA_REGISTRY_LOG4J_ROOT_LOGLEVEL: WARN
 
-  process_api:
-    image: kafka-streams-process_api:0.0.1-SNAPSHOT
-    hostname: process_api
-    container_name: process_api
+  processor_api:
+    image: kafka-streams-processor_api:0.0.1-SNAPSHOT
+    hostname: processor_api
+    container_name: processor_api
     depends_on:
       - broker
       - schema-registry
