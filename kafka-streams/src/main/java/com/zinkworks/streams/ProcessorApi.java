@@ -47,23 +47,7 @@ public class ProcessorApi {
             this.context = context;
             this.store = context.getStateStore(storeName);
             this.context.schedule(Duration.ofSeconds(30), PunctuationType.STREAM_TIME, this::forwardAll);
-            long threadId = Thread.currentThread().getId();
-            try (KeyValueIterator<String, Double> iterator = store.all()) {
-                Iterable<KeyValue<String, Double>> iterable = () -> iterator;
-                StreamSupport.stream(iterable.spliterator(), false)
-                        .forEach(e -> System.out.println("Processor started. Full store (thread id: " + threadId + "): " + e.key));
-            }
-        }
-
-        private void forwardAll(final long timestamp) {
-            try (KeyValueIterator<String, Double> iterator = store.all()) {
-                Iterable<KeyValue<String, Double>> iterable = () -> iterator;
-                StreamSupport.stream(iterable.spliterator(), false).forEach(e -> {
-                    Record<String, Double> totalPriceRecord = new Record<>(e.key, e.value, timestamp);
-                    context.forward(totalPriceRecord);
-                    System.out.println("Punctuation forwarded record - key " + totalPriceRecord.key() + " value " + totalPriceRecord.value());
-                });
-            }
+            System.out.println("Processor initiated.");
         }
 
         @Override
@@ -73,11 +57,30 @@ public class ProcessorApi {
 
             Double currentTotal = ofNullable(store.get(key)).orElse(0.0);
             System.out.println("current value -> " + currentTotal);
+
             Double newTotal = value.getPrice() + currentTotal;
             System.out.println("Price: " + value.getPrice() + " newTotal: " + newTotal);
 
             store.put(key, newTotal);
             System.out.println("Processed incoming record - key " + key + " value " + record.value());
+        }
+
+        private void forwardAll(final long timestamp) {
+            try (KeyValueIterator<String, Double> iterator = store.all()) {
+                Iterable<KeyValue<String, Double>> iterable = () -> iterator;
+
+                StreamSupport.stream(iterable.spliterator(), false)
+                        .forEach(e -> {
+                            Record<String, Double> totalPriceRecord = new Record<>(e.key, e.value, timestamp);
+                            context.forward(totalPriceRecord);
+
+                            System.out.println("Punctuation forwarded. Full store (thread id: " +
+                                    Thread.currentThread().getId() + "): " + e.key);
+
+                            System.out.println("Punctuation forwarded record - key " +
+                                    totalPriceRecord.key() + " value " + totalPriceRecord.value());
+                        });
+            }
         }
     }
 
