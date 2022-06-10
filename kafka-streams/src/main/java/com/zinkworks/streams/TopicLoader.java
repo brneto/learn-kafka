@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
@@ -151,12 +152,26 @@ public class TopicLoader {
     }
 
     private static final Callback callback = (metadata, exception) -> {
-        if(exception != null) {
+        if (exception != null) {
             System.out.printf("Producing records encountered error %s %n", exception);
         } else {
             System.out.printf("Record produced - offset - %d timestamp - %d %n", metadata.offset(), metadata.timestamp());
         }
     };
+
+    private Consumer<ElectronicOrder> sendToTopic(Producer<String, ElectronicOrder> producer) {
+        return electronicOrder -> {
+            ProducerRecord<String, ElectronicOrder> producerRecord =
+                    new ProducerRecord<>("input-topic",
+                            electronicOrder.getElectronicId().length() % 2,
+                            electronicOrder.getTime(),
+                            electronicOrder.getElectronicId(),
+                            electronicOrder);
+            System.out.println("Sending record ->" + producerRecord);
+
+            producer.send(producerRecord, callback);
+        };
+    }
 
     public void loadTopic() {
         Properties producerProps = config.getKafkaProps();
@@ -164,16 +179,8 @@ public class TopicLoader {
         producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
 
         try (Producer<String, ElectronicOrder> producer = new KafkaProducer<>(producerProps)) {
-            getOrders(Instant.now()).forEach((electronicOrder -> {
-                ProducerRecord<String, ElectronicOrder> producerRecord = new ProducerRecord<>("input-topic",
-                        0, //electronicOrder.getElectronicId().length()%2,
-                        electronicOrder.getTime(),
-                        electronicOrder.getElectronicId(),
-                        electronicOrder);
-
-                System.out.println("Sending record ->" + producerRecord);
-                producer.send(producerRecord, callback);
-            }));
+            getOrders(Instant.now())
+                    .forEach(sendToTopic(producer));
         }
     }
 
