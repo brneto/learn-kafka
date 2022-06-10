@@ -1,0 +1,72 @@
+= Kafka Streams Documentation
+Berchris Requiao <brneto@gmail.com>
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 4
+:tabsize: 4
+:sectlinks:
+
+:pkgsrc: ../../main/java/com/zinkworks/streams
+:smtconcept: https://docs.confluent.io/platform/current/connect/concepts.html
+:devguide: https://kafka.apache.org/32/documentation/streams/developer-guide/processor-api.html#defining-a-stream-processor
+
+[[abstract]]
+This document provides an overview of the logic used by the _Kafka Streams_ existing in the _com.zinkworks.streams_ package.
+[TIP]
+_Kafka Streams_ are part of the _Kafka_ API.
+More info can be found on {devguide}[Kafka Developer Guide].
+
+[[storeBuilder]]
+== Create Global Store Builder
+Here it is defined the Global Store Builder:
+
+====
+.StoreBuilder Store Builder
+[source,java,indent=0]
+....
+include::{pkgsrc}/ProcessorApi.java[tag=globalStoreBuilder]
+....
+<1> Create the store not making use of the changelog topic
+====
+
+== Add a Global Store
+Here it is added a Global Store to the stream topology:
+
+====
+.AddStore Add Store
+[source,java,indent=0]
+....
+include::{pkgsrc}/ProcessorApi.java[tag=globalStore]
+....
+<1> Like a source node, global store is considered a type of node and therefore needs to get its own name
+====
+NOTE: Because all the topic record are copied to the global store it is not allowed have the same topic registered to a global store and as a source node in the same topology object. In such case Kafka will throw a `TopologyException` exception error.
+
+Although Global State Store add no constraints on the number of streams instances using it regardless the number of partitions existing in the topic it reads from, the number of stream instances in kafka is always limited by the number of partitions of the source node in the topology the processor is in.
+
+== Example of Kafka Stream DSL
+Here it can be seen an example of how to create a kafka stream using the DSL API,
+instead of the Processor API:
+
+====
+.kafkaDSL Kafka Stream DSL
+[source,java,indent=0]
+....
+include::{pkgsrc}/ProcessorApi.java[tag=kstream]
+....
+====
+
+== Define Punctuation Schedule
+The Processor API developers can define arbitrary stream processors that process one received record at a time, and connect these processors with their associated state stores to compose the processor topology that represents their customized processing logic.footnote:[{devguide}[Kafka Stream Developer Guide].]
+
+The process method is performed on each of the received record, but those processed records are only forwarded to the downstream processors based on the punctuation scheduled:
+
+====
+.schedule Forward Processed Records
+[source,java,indent=0]
+....
+include::{pkgsrc}/processor/TotalPriceOrderProcessor.java[tag=schedulePunctuation]
+....
+====

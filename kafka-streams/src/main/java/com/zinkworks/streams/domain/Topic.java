@@ -1,4 +1,4 @@
-package com.zinkworks.streams.Domain;
+package com.zinkworks.streams.domain;
 
 import lombok.Data;
 

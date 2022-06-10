@@ -1,6 +1,6 @@
 package com.zinkworks.streams;
 
-import com.zinkworks.streams.Domain.Configuration;
+import com.zinkworks.streams.domain.Configuration;
 import io.confluent.developer.avro.ElectronicOrder;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import lombok.RequiredArgsConstructor;
@@ -166,7 +166,7 @@ public class TopicLoader {
         try (Producer<String, ElectronicOrder> producer = new KafkaProducer<>(producerProps)) {
             getOrders(Instant.now()).forEach((electronicOrder -> {
                 ProducerRecord<String, ElectronicOrder> producerRecord = new ProducerRecord<>("input-topic",
-                        electronicOrder.getElectronicId().length()%2,
+                        0, //electronicOrder.getElectronicId().length()%2,
                         electronicOrder.getTime(),
                         electronicOrder.getElectronicId(),
                         electronicOrder);

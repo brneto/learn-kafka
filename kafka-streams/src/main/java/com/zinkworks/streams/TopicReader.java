@@ -1,9 +1,6 @@
 package com.zinkworks.streams;
 
-import com.zinkworks.streams.Domain.Configuration;
-import io.confluent.developer.avro.ElectronicOrder;
-import io.confluent.kafka.serializers.KafkaAvroDeserializer;
-import io.confluent.kafka.serializers.KafkaAvroSerializer;
+import com.zinkworks.streams.domain.Configuration;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;

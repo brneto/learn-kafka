@@ -1,4 +1,4 @@
-package com.zinkworks.streams.Domain;
+package com.zinkworks.streams.domain;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -7,9 +7,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.function.BiFunction;
@@ -48,6 +46,12 @@ public class Configuration {
                 (t, u) -> join(".", "application", t, u);
 
         String topicName = "input-topic";
+        topics.add(new Topic(
+                config.getString(joiner.apply(topicName, "name")),
+                of(config.getInt(joiner.apply(topicName, "partitions"))),
+                of((short) config.getInt(joiner.apply(topicName, "replication-factor")))));
+
+        topicName = "ref-topic";
         topics.add(new Topic(
                 config.getString(joiner.apply(topicName, "name")),
                 of(config.getInt(joiner.apply(topicName, "partitions"))),

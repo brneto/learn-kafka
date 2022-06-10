@@ -2,11 +2,19 @@ pluginManagement {
     plugins {
         id 'io.freefair.lombok' version lombokVersion
         id 'com.gorylenko.gradle-git-properties' version gitPropertiesVersion
-        id 'com.adarshr.test-logger' version testLoggerVersion
+        id 'com.github.johnrengelman.shadow' version shadowVersion
+        id 'com.github.davidmc24.gradle.plugin.avro' version avroVersion
+
+        // Containers
         id 'com.google.cloud.tools.jib' version jibVersion
         id 'com.palantir.docker-compose' version dockerComposeVersion
-        id 'com.github.davidmc24.gradle.plugin.avro' version avroVersion
-        id 'com.github.johnrengelman.shadow' version shadowVersion
+
+        // Docs
+        id 'org.asciidoctor.jvm.convert' version asciidoctorConvertVersion
+        id 'org.asciidoctor.jvm.pdf' version asciidoctorPdfVersion
+
+        // Tests
+        id 'com.adarshr.test-logger' version testLoggerVersion
     }
 }
 startParameter.excludedTaskNames = ['wrapper']

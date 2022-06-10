@@ -3,11 +3,19 @@ plugins {
     id 'application'
     id 'io.freefair.lombok'
     id 'com.gorylenko.gradle-git-properties'
-    id 'com.adarshr.test-logger'
+    id 'com.github.johnrengelman.shadow'
+    id 'com.github.davidmc24.gradle.plugin.avro'
+
+    // Containers
     id 'com.google.cloud.tools.jib'
     id 'com.palantir.docker-compose'
-    id 'com.github.davidmc24.gradle.plugin.avro'
-    id 'com.github.johnrengelman.shadow'
+
+    // Docs
+    id 'org.asciidoctor.jvm.convert'
+    id 'org.asciidoctor.jvm.pdf'
+
+    // Tests
+    id 'com.adarshr.test-logger'
 }
 
 group 'com.zinkworks.streams'
@@ -52,6 +60,29 @@ dependencies {
     testImplementation 'org.assertj:assertj-core:3.22.0'
     testImplementation 'org.apache.kafka:kafka-streams-test-utils:2.8.0'
 }
+
+asciidoctor {
+    // https://asciidoctor.github.io/asciidoctor-gradle-plugin/development-3.x/user-guide/#_include_directives_and_base_directory
+    // By convention it sets
+    // sourceDir to src/docs/asciidoc
+    // outputDir to ${buildDir}/docs/asciidoc
+
+    baseDirFollowsSourceFile()
+    options backend: 'html', doctype: 'book'
+    doLast {
+        file("${outputDir}/index.html")
+                .renameTo("${outputDir}/globalStore.html")
+    }
+}
+
+asciidoctorPdf {
+    baseDirFollowsSourceFile()
+    doLast {
+        file("${outputDir}/index.pdf")
+                .renameTo("${outputDir}/globalStore.pdf")
+    }
+}
+
 
 testlogger {
     theme 'mocha'
