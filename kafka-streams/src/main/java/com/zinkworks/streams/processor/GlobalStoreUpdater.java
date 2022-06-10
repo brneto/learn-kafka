@@ -10,6 +10,8 @@ import org.apache.kafka.streams.state.KeyValueStore;
 @RequiredArgsConstructor
 public class GlobalStoreUpdater<K, V> implements Processor<String, ElectronicOrder, Void, Void> {
 
+    public static final String NAME = "global-store-updater";
+
     private final String storeName;
 
     private KeyValueStore<String, ElectronicOrder> store;

@@ -24,6 +24,11 @@ import static java.util.stream.Collectors.toMap;
 @RequiredArgsConstructor
 public class ProcessorApi {
 
+    private final static String
+            REF_TOPIC = "ref-topic",
+            SOURCE_TOPIC = "input-topic",
+            SINK_TOPIC = "output-topic";
+
     private final static StoreBuilder<KeyValueStore<String, Double>> totalPriceStoreBuilder =
             Stores.keyValueStoreBuilder(
                     Stores.inMemoryKeyValueStore("total-price-store"),
@@ -62,15 +67,15 @@ public class ProcessorApi {
                         "source-node",
                         stringSerde.deserializer(),
                         specificAvroSerde.deserializer(),
-                        "input-topic")
+                        SOURCE_TOPIC)
 // tag::globalStore[]
                 .addGlobalStore(
                         globalTotalPriceStoreBuilder,
                         "store-node", // <1>
                         stringSerde.deserializer(),
                         specificAvroSerde.deserializer(),
-                        "ref-topic",
-                        "global-store-updater-supplier",
+                        REF_TOPIC,
+                        GlobalStoreUpdater.NAME,
                         () -> new GlobalStoreUpdater<>(globalTotalPriceStoreBuilder.name()))
 // end::globalStore[]
                 .addProcessor(
@@ -84,7 +89,7 @@ public class ProcessorApi {
                         "aggregate-price")
                 .addSink(
                         "sink-node",
-                        "output-topic",
+                        SINK_TOPIC,
                         stringSerde.serializer(),
                         doubleSerde.serializer(),
                         "aggregate-price");
