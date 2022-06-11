@@ -11,6 +11,9 @@ Berchris Requiao <brneto@gmail.com>
 :pkgsrc: ../../main/java/com/zinkworks/streams
 :smtconcept: https://docs.confluent.io/platform/current/connect/concepts.html
 :devguide: https://kafka.apache.org/32/documentation/streams/developer-guide/processor-api.html#defining-a-stream-processor
+:mtopic: https://gist.github.com/andrewlouis93/5fd10d8041aeaf733d3acfbd61f6bbef
+:topicstragety: https://medium.com/streamthoughts/understanding-kafka-partition-assignment-strategies-and-how-to-write-your-own-custom-assignor-ebeda1fc06f3
+:rangeassignor: https://kafka.apache.org/32/javadoc/org/apache/kafka/clients/consumer/RangeAssignor.html
 
 [[abstract]]
 This document provides an overview of the logic used by the _Kafka Streams_ existing in the _com.zinkworks.streams_ package.
@@ -59,7 +62,7 @@ include::{pkgsrc}/ProcessorApi.java[tag=kstream]
 ====
 
 == Define Punctuation Schedule
-The Processor API developers can define arbitrary stream processors that process one received record at a time, and connect these processors with their associated state stores to compose the processor topology that represents their customized processing logic.footnote:[{devguide}[Kafka Stream Developer Guide].]
+The Processor API developers can define arbitrary stream processors that process one received record at a time, and connect these processors with their associated state stores to compose the processor topology that represents their customized processing logic.footnote:[{devguide}[Kafka Stream Developer Guide.]]
 
 The process method is performed on each of the received record, but those processed records are only forwarded to the downstream processors based on the punctuation scheduled:
 
@@ -71,11 +74,9 @@ include::{pkgsrc}/processor/TotalPriceOrderProcessor.java[tag=schedulePunctuatio
 ....
 ====
 
-== Kafka Topic In Memory Load
-When the reference topic has only one partition and the source topic has multiple partitions, the in memory data structure behaves in similar fashion as a global store. Thus, all stream processor instances will share the same data and this data structure will contain all the record of the reference topic.
+== Kafka Topic In Memory Load via Global Store Updater vs Stream Processor Terminal Operation
+Regardless you use _Global Store Updater_ or _Stream Processor Terminal Operation_ you will always need to be concerned about co-partitioning. In either cases you only able to scale the Enrichment modules increasing the partitions number from the *Source Topic*. The real difference between them is how the topics partitions are assigned to each instance.
 
-The number of stream processor instances are solely determined by the number of partitions existing in the source topic. This is true regardless the system is using a global store updater or a stream processor terminal operation to keep track of the reference topic in the in memory data structure. What actually happens when multiple instance of the stream processor reading from source topic is created is that the same number of instances of the stream processor reading from reference topic is also created but since the reference topic has only one partitions the surplus instances are left there doing nothing.
+For Global Store Updater all that matters is how many partitions the *Source Input* have because the Global Store Updater will always read all records from the *Reference Topic* regardless the number of partitions there. While the _Stream Processor Terminal Operation_ will be assigned based on the partition assigment strategyfootnote:[{topicstragety}[Understanding Kafka partition assignment strategies and how to write your own custom assignor.]] configured for the topics. The default strategy is the `RangeAssignor`footnote:[{rangeassignor}[RangeAssignor (kafka 3.2.0 API).]] where it divides the number of partitions over the number of consumer instances, and assign one by one. If the division does not result in a nice round number, the first few consumer instances are assigned more partitions.footnote:[{mtopic}[Consuming from multiple topics.]]
 
-In case reference topic has more partitions than the source topic, the number of instance of the stream processor reading from the reference topic are again restricted by the number of partitions in the source topic.
-
-The conclusion is in both cases (using the global store update or the stream processor terminal operation) the in memory data structure will always be sharded based on the number of indepedent instances running which are defined by the number of partitions in source topic being read by the stream processor. When increase in scalability is required the action need is only increase in the same amount the number of partitions in the source topic and in the reference topic.
+The only risk we might face using the _Stream Processor Terminal Operation_ is if the number of partitions in the *Reference* and *Source* topics are not the same. Due to how Kafka assign records partitions based on record's key _hashcode_, we could end up having records from the same key being consumed by different instances. This means that to be able to scale up the instances safely it needs to be guaranteed that the *Reference Topic* and *Source Topic* has always the same number of partitions. This can be enforced via code by throwing an exception in case this requirement is not obeyed, in similar manner as done by the _KTables_ for full join operations.
