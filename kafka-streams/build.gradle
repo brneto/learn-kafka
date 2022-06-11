@@ -53,12 +53,15 @@ dependencies {
     }
 
     // Logging
-    implementation 'ch.qos.logback:logback-classic:1.2.11'
+    implementation 'org.apache.logging.log4j:log4j-api:2.17.2'
+    implementation 'org.apache.logging.log4j:log4j-core:2.17.2'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.17.2'
+    runtimeOnly 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.3'
 
     // Test
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
     testImplementation 'org.assertj:assertj-core:3.22.0'
-    testImplementation 'org.apache.kafka:kafka-streams-test-utils:2.8.0'
+    testImplementation 'org.apache.kafka:kafka-streams-test-utils:3.1.0'
 }
 
 asciidoctor {

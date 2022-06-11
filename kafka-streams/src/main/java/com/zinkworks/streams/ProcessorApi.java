@@ -15,9 +15,11 @@ import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -36,18 +38,27 @@ public class ProcessorApi {
                     Serdes.Double()
             ).withLoggingDisabled();
 
+    private final static Supplier<SpecificAvroSerde<ElectronicOrder>> electronicOrderSerdeSupplier = () -> {
+        SpecificAvroSerde<ElectronicOrder> specificAvroSerde = new SpecificAvroSerde<>();
+        specificAvroSerde.configure(
+                toConfigMap(new Configuration().getKafkaProps()),
+                false);
+
+        return specificAvroSerde;
+    };
+
 // tag::globalStoreBuilder[]
-    private final static StoreBuilder<KeyValueStore<String, Double>> globalTotalPriceStoreBuilder =
+    private final static StoreBuilder<KeyValueStore<String, ElectronicOrder>> globalTotalPriceStoreBuilder =
             Stores.keyValueStoreBuilder(
-                    Stores.inMemoryKeyValueStore("total-price-global-store"),
+                    Stores.inMemoryKeyValueStore("global-total-price-store"),
                     Serdes.String(),
-                    Serdes.Double()
+                    electronicOrderSerdeSupplier.get()
             ).withLoggingDisabled(); // <1>
 // end::globalStoreBuilder[]
 
     private final Configuration config;
 
-    private Map<String, ?> toConfigMap(Properties props) {
+    private static Map<String, ?> toConfigMap(Properties props) {
         return props.entrySet()
                 .stream()
                 .collect(toMap(e -> (String) e.getKey(), Entry::getValue));
@@ -56,11 +67,10 @@ public class ProcessorApi {
     public void start() {
         final Properties streamsProps = config.getKafkaProps();
 
-        final SpecificAvroSerde<ElectronicOrder> specificAvroSerde = new SpecificAvroSerde<>();
-        specificAvroSerde.configure(toConfigMap(streamsProps), false);
-
+        final SpecificAvroSerde<ElectronicOrder> specificAvroSerde = electronicOrderSerdeSupplier.get();
         final Serde<String> stringSerde = Serdes.String();
         final Serde<Double> doubleSerde = Serdes.Double();
+        final Map<String, ElectronicOrder> dataHolder = new HashMap<>();
 
         Topology topology = new Topology()
                 .addSource(
@@ -71,28 +81,40 @@ public class ProcessorApi {
 // tag::globalStore[]
                 .addGlobalStore(
                         globalTotalPriceStoreBuilder,
-                        "store-node", // <1>
+                        "source-store-node", // <1>
                         stringSerde.deserializer(),
                         specificAvroSerde.deserializer(),
                         REF_TOPIC,
                         GlobalStoreUpdater.NAME,
-                        () -> new GlobalStoreUpdater<>(globalTotalPriceStoreBuilder.name()))
+                        () -> new GlobalStoreUpdater<>(
+                                globalTotalPriceStoreBuilder.name(),
+                                dataHolder))
 // end::globalStore[]
+//                .addSource(
+//                        "source-store-node",
+//                        stringSerde.deserializer(),
+//                        specificAvroSerde.deserializer(),
+//                        REF_TOPIC)
+//                .addProcessor(
+//                        InMemoryTopicAccumulator.NAME,
+//                        () -> new InMemoryTopicAccumulator(REF_TOPIC, dataHolder),
+//                        "source-store-node")
                 .addProcessor(
-                        "aggregate-price",
+                        TotalPriceOrderProcessor.NAME,
                         () -> new TotalPriceOrderProcessor(
+                                dataHolder,
                                 globalTotalPriceStoreBuilder.name(),
                                 totalPriceStoreBuilder.name()),
-                        "source-node")
+                        "source-node")//, InMemoryTopicAccumulator.NAME)
                 .addStateStore(
                         totalPriceStoreBuilder,
-                        "aggregate-price")
+                        TotalPriceOrderProcessor.NAME)
                 .addSink(
                         "sink-node",
                         SINK_TOPIC,
                         stringSerde.serializer(),
                         doubleSerde.serializer(),
-                        "aggregate-price");
+                        TotalPriceOrderProcessor.NAME);
 // tag::kstream[]
 //        StreamsBuilder builder = new StreamsBuilder();
 //        KTable<String, ElectronicOrder> kTable = builder.table("input-topic",

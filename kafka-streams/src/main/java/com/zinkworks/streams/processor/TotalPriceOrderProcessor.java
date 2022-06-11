@@ -1,6 +1,7 @@
 package com.zinkworks.streams.processor;
 
 import io.confluent.developer.avro.ElectronicOrder;
+import lombok.NonNull;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.processor.PunctuationType;
 import org.apache.kafka.streams.processor.api.Processor;
@@ -21,11 +22,18 @@ import static java.util.stream.Collectors.toMap;
 
 public class TotalPriceOrderProcessor implements Processor<String, ElectronicOrder, String, Double> {
 
+    public static final String NAME = "aggregate-price";
+
     private final String[] storesName;
+
+    @NonNull
+    private final Map<String, ElectronicOrder> dataHolder;
+
     private ProcessorContext<String, Double> context;
     private Map<String, KeyValueStore<String, Double>> storeMap;
 
-    public TotalPriceOrderProcessor(String... storesName) {
+    public TotalPriceOrderProcessor(Map<String, ElectronicOrder> dataHolder, String... storesName) {
+        this.dataHolder = dataHolder;
         this.storesName = storesName;
     }
 
@@ -38,7 +46,7 @@ public class TotalPriceOrderProcessor implements Processor<String, ElectronicOrd
         this.context.schedule(Duration.ofSeconds(30), PunctuationType.STREAM_TIME, this::forwardAll);
         // end::schedulePunctuation[]
 
-        System.out.println("Processor initiated.");
+        System.out.printf(NAME + "[threadId: %s] -> Processor initiated.\n", Thread.currentThread().getId());
     }
 
     private void useAllLocalStores(Consumer<? super KeyValueStore<String, Double>> action) {
@@ -51,6 +59,9 @@ public class TotalPriceOrderProcessor implements Processor<String, ElectronicOrd
 
     @Override
     public void process(Record<String, ElectronicOrder> record) {
+        this.dataHolder.keySet()
+                .forEach(k -> System.out.printf("DataHolder key -> %s\n", k));
+
         useAllLocalStores(store -> {
             final String key = record.key();
             final ElectronicOrder value = record.value();
@@ -62,7 +73,9 @@ public class TotalPriceOrderProcessor implements Processor<String, ElectronicOrd
             System.out.println("Price: " + value.getPrice() + " newTotal: " + newTotal);
 
             store.put(key, newTotal);
-            System.out.println("Processed incoming record - key " + key + " value " + record.value());
+            System.out.printf(
+                    NAME + "[threadId: %s] -> Processed incoming record - partition: %d, key: %s, value: %s\n",
+                    Thread.currentThread().getId(), context.recordMetadata().get().partition(), key, value);
         });
     }
 

@@ -70,3 +70,12 @@ The process method is performed on each of the received record, but those proces
 include::{pkgsrc}/processor/TotalPriceOrderProcessor.java[tag=schedulePunctuation]
 ....
 ====
+
+== Kafka Topic In Memory Load
+When the reference topic has only one partition and the source topic has multiple partitions, the in memory data structure behaves in similar fashion as a global store. Thus, all stream processor instances will share the same data and this data structure will contain all the record of the reference topic.
+
+The number of stream processor instances are solely determined by the number of partitions existing in the source topic. This is true regardless the system is using a global store updater or a stream processor terminal operation to keep track of the reference topic in the in memory data structure. What actually happens when multiple instance of the stream processor reading from source topic is created is that the same number of instances of the stream processor reading from reference topic is also created but since the reference topic has only one partitions the surplus instances are left there doing nothing.
+
+In case reference topic has more partitions than the source topic, the number of instance of the stream processor reading from the reference topic are again restricted by the number of partitions in the source topic.
+
+The conclusion is in both cases (using the global store update or the stream processor terminal operation) the in memory data structure will always be sharded based on the number of indepedent instances running which are defined by the number of partitions in source topic being read by the stream processor. When increase in scalability is required the action need is only increase in the same amount the number of partitions in the source topic and in the reference topic.

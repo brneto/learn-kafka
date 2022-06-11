@@ -139,6 +139,14 @@ public class TopicLoader {
                 .setPrice(1333.58)
                 .setTime(instant.toEpochMilli()).build();
 
+//        instant = instant.plusSeconds(35L);
+//        ElectronicOrder electronicOrder9 = ElectronicOrder.newBuilder()
+//                .setElectronicId("HDTV-23334")
+//                .setOrderId("instore-1")
+//                .setUserId("1038884844")
+//                .setPrice(1333.58)
+//                .setTime(instant.toEpochMilli()).build();
+
         return new ArrayList<ElectronicOrder>() {{
             add(electronicOrder1);
             add(electronicOrder2);
@@ -148,6 +156,7 @@ public class TopicLoader {
             add(electronicOrder6);
             add(electronicOrder7);
             add(electronicOrder8);
+            //add(electronicOrder9);
         }};
     }
 
@@ -159,10 +168,12 @@ public class TopicLoader {
         }
     };
 
+    private final static String SINK_TOPIC = "ref-topic";
+
     private Consumer<ElectronicOrder> sendToTopic(Producer<String, ElectronicOrder> producer) {
         return electronicOrder -> {
             ProducerRecord<String, ElectronicOrder> producerRecord =
-                    new ProducerRecord<>("input-topic",
+                    new ProducerRecord<>(SINK_TOPIC,
                             electronicOrder.getElectronicId().length() % 2,
                             electronicOrder.getTime(),
                             electronicOrder.getElectronicId(),
